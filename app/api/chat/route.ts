@@ -1,35 +1,39 @@
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { DEFAULT_MODEL, SUPPORTED_MODELS } from "@/lib/constants";
-import { gateway } from "@/lib/gateway";
+import { streamText, type UIMessage, convertToModelMessages } from 'ai';
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const {
-    messages,
-    modelId = DEFAULT_MODEL,
-  }: { messages: UIMessage[]; modelId: string } = await req.json();
+  const { messages }: { messages: UIMessage[] } = await req.json();
+  const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
 
-  if (!SUPPORTED_MODELS.includes(modelId)) {
-    return new Response(
-      JSON.stringify({ error: `Model ${modelId} is not supported` }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+  // 1. Train the chatbot with predefined input patterns for commercial use
+  let corporateResponse = "Thank you for contacting AlphaCloud Solutions. How can I assist with your corporate infrastructure today?";
+
+  if (lastUserMessage.includes('price') || lastUserMessage.includes('pricing') || lastUserMessage.includes('cost')) {
+    corporateResponse = "AlphaCloud Solutions pricing: Basic storage packages begin at $49/month. Advanced enterprise architecture assessments require a custom corporate consultation quote.";
+  } else if (lastUserMessage.includes('service') || lastUserMessage.includes('migration') || lastUserMessage.includes('deploy')) {
+    corporateResponse = "We specialize in seamless cloud migrations and full infrastructure deployments supporting AWS, Azure, and Google Cloud with guaranteed 99.99% uptime.";
+  } else if (lastUserMessage.includes('support') || lastUserMessage.includes('help') || lastUserMessage.includes('error') || lastUserMessage.includes('outage')) {
+    corporateResponse = "For technical support or service issues, please submit an official service desk ticket or contact our 24/7 on-call engineering helpline at services@alphacloud.tech.";
+  } else if (lastUserMessage.includes('status') || lastUserMessage.includes('order') || lastUserMessage.includes('account')) {
+    corporateResponse = "New environment provisioning status: Custom cloud instances take roughly 10-15 minutes to automatically spin up following authorization validation.";
   }
 
-  const result = streamText({
-    model: gateway(modelId),
-   system: `You are 'AlphaBot', an expert AI customer support assistant representing AlphaCloud Solutions, a premier cloud services enterprise. Your objective is to address corporate queries instantly, accurately, and professionally. Use the following predefined commercial patterns to guide users:
-1. SERVICE INQUIRIES: If asked about cloud migrations or infrastructure deployments, outline that we support AWS, Azure, and Google Cloud with guaranteed 99.99% uptime.
-2. PRICING & ESTIMATES: If asked about pricing plans, state that basic cloud storage packages begin at $49/month, while advanced cloud architecture assessments require a custom corporate consultation quote.
-3. TECHNICAL SUPPORT: If a customer encounters an outage or a technical platform glitch, instruct them to open an official service desk ticket or contact our 24/7 on-call helpline at services@alphacloud.tech.
-4. ORDER STATUS: If asked about account provisioning, explain that new cloud infrastructure environments take 10-15 minutes to automatically provision after validation.
-Keep your tone crisp, polite, and helpful. Always maintain context as a corporate representative. Do not break character.`,
-    messages: convertToModelMessages(messages),
-    onError: (e) => {
-      console.error("Error while streaming.", e);
-    },
+  // Create an instantaneous local mock stream for the AI SDK UI to display seamlessly
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      // Chunk text delivery so it appears naturally typed out on screen
+      const words = corporateResponse.split(' ');
+      for (const word of words) {
+        controller.enqueue(encoder.encode(`0:"${word} "\n`));
+        await new Promise(resolve => setTimeout(resolve, 40)); // speed timing
+      }
+      controller.close();
+    }
   });
 
-  return result.toUIMessageStreamResponse();
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  });
 }
