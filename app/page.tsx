@@ -1,10 +1,6 @@
 import { Chat } from "@/components/chat";
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ modelId: string }>;
-}) {
-  const { modelId } = await searchParams;
-  return <Chat modelId={modelId} />;
+export default function Page() {
+  // Hardcode the chatbot interface to connect directly to our server route
+  return <Chat modelId="local-commercial-bot" />;
 }
