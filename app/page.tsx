@@ -28,7 +28,7 @@ export default function Page() {
 
       const cleanData = await response.text();
       setMessages((prev) => [...prev, { role: 'bot', content: cleanData.trim() }]);
-    } catch (error) {
+    } catch {
       setMessages((prev) => [...prev, { role: 'bot', content: 'Error connecting to support system.' }]);
     }
   };
