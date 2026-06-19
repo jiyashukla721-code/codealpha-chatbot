@@ -1,12 +1,9 @@
-import { streamText, type UIMessage, convertToModelMessages } from 'ai';
-
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const { messages } = await req.json();
   const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
 
-  // 1. Train the chatbot with predefined input patterns for commercial use
   let corporateResponse = "Thank you for contacting AlphaCloud Solutions. How can I assist with your corporate infrastructure today?";
 
   if (lastUserMessage.includes('price') || lastUserMessage.includes('pricing') || lastUserMessage.includes('cost')) {
@@ -19,21 +16,7 @@ export async function POST(req: Request) {
     corporateResponse = "New environment provisioning status: Custom cloud instances take roughly 10-15 minutes to automatically spin up following authorization validation.";
   }
 
-  // Create an instantaneous local mock stream for the AI SDK UI to display seamlessly
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      // Chunk text delivery so it appears naturally typed out on screen
-      const words = corporateResponse.split(' ');
-      for (const word of words) {
-        controller.enqueue(encoder.encode(`0:"${word} "\n`));
-        await new Promise(resolve => setTimeout(resolve, 40)); // speed timing
-      }
-      controller.close();
-    }
-  });
-
-  return new Response(stream, {
+  return new Response(corporateResponse, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' }
   });
 }
