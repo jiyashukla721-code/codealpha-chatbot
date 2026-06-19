@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       status: 200,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
-  } catch (error) {
+  } catch {
     return new Response("Error processing request", { status: 500 });
   }
 }
