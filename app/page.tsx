@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+
+interface ChatMessage {
+  role: 'user' | 'bot';
+  content: string;
+}
 
 export default function Page() {
-  const [messages, setMessages] = useState<{ role: 'user' | 'bot'; content: string }[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
 
   const handleSend = async (e: React.FormEvent) => {
@@ -14,7 +19,6 @@ export default function Page() {
     setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
 
-    // Call our local backend route directly
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -22,18 +26,8 @@ export default function Page() {
         body: JSON.stringify({ messages: [{ content: userMsg }] }),
       });
 
-      const data = await response.text();
-      
-      // Clean up server-sent event formatting if it exists
-      const cleanData = data
-        .split('\n')
-        .filter(line => line.startsWith('0:'))
-        .map(line => line.replace(/^0:"(.*)"$/, '$1'))
-        .join('')
-        .replace(/\\n/g, '\n')
-        .trim();
-
-      setMessages((prev) => [...prev, { role: 'bot', content: cleanData || data }]);
+      const cleanData = await response.text();
+      setMessages((prev) => [...prev, { role: 'bot', content: cleanData.trim() }]);
     } catch (error) {
       setMessages((prev) => [...prev, { role: 'bot', content: 'Error connecting to support system.' }]);
     }
